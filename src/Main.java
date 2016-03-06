@@ -19,21 +19,13 @@ import java.util.stream.Stream;
  * Created by kris13 on 05.03.16.
  */
 public class Main {
-    private static final int THREADS = 3;
     private static final int W = 50;
-    private static final int dimension = 1000;
+    private static final int dimension = 500;
     private static final double eps = 0.0000001;
     private static double[] a;
     private static double[] b;
     private static final Random random = new Random();
     private static final boolean print = false;
-    private final Object lock = new Object();
-    private int step;
-    AtomicInteger couter = new AtomicInteger(1);
-
-    double[] c;
-    double[] root;
-    double[] rootNew;
 
     public static void main(String[] args) throws InterruptedException {
         long t = System.currentTimeMillis();
@@ -44,56 +36,41 @@ public class Main {
     private Main() throws InterruptedException {
         a = random.doubles(dimension + 1).toArray();//.map(d -> (d % (2/W)) - 1/W)
         b = random.doubles(dimension).toArray();
-        ExecutorService pool = Executors.newFixedThreadPool(THREADS);
 
-        c = new double[dimension + 1];
-        root = new double[1];
+        double[] c = new double[dimension + 1];
+        double[] root = new double[1];
         root[0] = a[dimension];
         c[0] = 1;
-        for (step = 1; step <= dimension; step++) {
-            synchronized (lock) {
-                while (couter.get() != step)
-                    lock.wait();
-            }
-            couter.set(0);
-            for (int j = 0; j < step; j++) {
-                c[j] *= b[dimension - step]*b[dimension - step];
+        for (int i = 1; i <= dimension; i++) {
+            for (int j = 0; j < i; j++) {
+                c[j] *= b[dimension - i]*b[dimension - i];
             }
             if (print) {
-                System.out.print(String.format("Root of: x = %f", a[dimension - step]));
-                for (int j = 0; j < step; j++) {
+                System.out.print(String.format("Root of: x = %f", a[dimension - i]));
+                for (int j = 0; j < i; j++) {
                     System.out.print(String.format(" + %f/(x - %f)", c[j], root[j]));
                 }
                 System.out.println();
             }
-            rootNew = findRoots(c, root, a[dimension - step], step);
+            double[] rootNew = findRoots(c, root, a[dimension - i], i);
             if (print)
                 System.out.print("Is ");
-            for (int j = 0; j <= step; j++) {
-                if (step > 500) {
-                    pool.execute(new CalcC(j));
-                } else {
-                    c[j] = 1;
-                    for (double aRoot : root) {
-                        c[j] *= (rootNew[j] - aRoot);
-                    }
-                    for (int k = 0; k < rootNew.length; k++) {
-                        if (k != j)
-                            c[j] /= (rootNew[j] - rootNew[k]);
-                    }
-                    if (couter.incrementAndGet() == step)
-                        synchronized (lock) {
-                            lock.notify();
-                        }
-                }
+            for (int j = 0; j <= i; j++) {
                 if (print)
                     System.out.print(rootNew[j] + " ");
+                c[j] = 1;
+                for (double aRoot : root) {
+                    c[j] *= (rootNew[j] - aRoot);
+                }
+                for (int k = 0; k < rootNew.length; k++) {
+                    if (k != j)
+                        c[j] /= (rootNew[j] - rootNew[k]);
+                }
             }
             root = rootNew;
             if (print)
                 System.out.println();
         }
-        pool.shutdown();
     }
 
     private double[] findRoots(double[] c, double[] x, double a, int ind) {
@@ -124,27 +101,5 @@ public class Main {
                 l = m;
         }
         return l;
-    }
-
-    private class CalcC implements Runnable {
-        private final int cur;
-
-        public CalcC(int j) {
-            cur = j;
-        }
-
-        @Override
-        public void run() {
-            c[cur] = 1;
-            for (int k = 0; k < root.length; k++) {
-                c[cur] *= (rootNew[cur] - root[k]);
-                if (k != cur)
-                    c[cur] /= (rootNew[cur] - rootNew[k]);
-            }
-            if (couter.incrementAndGet() == step)
-                synchronized (lock) {
-                    lock.notify();
-                }
-        }
     }
 }
