@@ -120,6 +120,7 @@ public class CalcG11<T extends Number> implements Callable<CalcG11.G11> {
             if (print)
                 System.out.println();
         }
+        pool.shutdown();
         return new G11(x, c, averageC);
     }
 
@@ -225,31 +226,12 @@ public class CalcG11<T extends Number> implements Callable<CalcG11.G11> {
         }
     }
 
-    public class G11 {
-        private final BigDecimal[] x;
-        private final BigDecimal[] c;
+    public class G11 extends Gij {
         private final double[] averC;
 
         public G11(BigDecimal[] x, BigDecimal[] c, double[] averageC) {
-            this.x = x;
-            this.c = c;
+            super(x, c);
             this.averC = averageC;
-        }
-
-        public BigDecimal[] getC() {
-            return c;
-        }
-
-        public double[] getCdouble() {
-            return Arrays.stream(c).mapToDouble(BigDecimal::doubleValue).toArray();
-        }
-
-        public BigDecimal[] getX() {
-            return x;
-        }
-
-        public double[] getXdouble() {
-            return Arrays.stream(x).mapToDouble(BigDecimal::doubleValue).toArray();
         }
 
         public double[] getAverC() {

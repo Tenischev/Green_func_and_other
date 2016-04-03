@@ -32,60 +32,34 @@ public class Diagonalization<T extends Number> implements Callable<TridiagonalMa
         double[] b = new double[matrix.length];
 
         double[] q = random.doubles((long) matrix.length).toArray(); // new double[matrix.length]; Arrays.fill(q, 1.0);
-        double norm = getNorm(q);
+        double norm = UtilsVector.getSecondNorm(q);
         System.out.println(norm);
         for (int j = 0; j < matrix.length; j++) {
             q[j] = q[j] / norm;
         }
-        double[] r = multiplyMatrixTo(q);
-        a[0] = multiplyVect(q, r);
+        double[] r = UtilsVector.multiplyToMatrix(matrix, q);
+        a[0] = UtilsVector.multiply(q, r);
         for (int j = 0; j < matrix.length; j++) {
             r[j] = r[j] - a[0] * q[j];
         }
-        b[0] = getNorm(r);
+        b[0] = UtilsVector.getSecondNorm(r);
         for (int i = 1; i < matrix.length; i++) {
             v = Arrays.copyOf(q, matrix.length);
             for (int j = 0; j < matrix.length; j++) {
                 q[j] = r[j] / b[i - 1];
             }
-            r = multiplyMatrixTo(q);
+            r = UtilsVector.multiplyToMatrix(matrix, q);
             for (int j = 0; j < matrix.length; j++) {
                 r[j] = r[j] - b[i - 1] * v[j];
             }
-            a[i] = multiplyVect(q, r);
+            a[i] = UtilsVector.multiply(q, r);
             for (int j = 0; j < matrix.length; j++) {
                 r[j] = r[j] - a[i] * q[j];
             }
-            b[i] = getNorm(r);
+            b[i] = UtilsVector.getSecondNorm(r);
             //System.out.println(b[i]);
         }
         return new TridiagonalMatrix<>(Arrays.stream(a).boxed().toArray(Double[]::new)
                 , Arrays.stream(Arrays.copyOf(b, matrix.length - 1)).boxed().toArray(Double[]::new));
-    }
-
-    private double multiplyVect(double[] v0, double[] v1) {
-        double ans = 0;
-        for (int i = 0; i < v0.length; i++) {
-            ans += v0[i] * v1[i];
-        }
-        return ans;
-    }
-
-    private double getNorm(double[] vect) {
-        double ans = 0;
-        for (int i = 0; i < vect.length; i++) {
-            ans += vect[i]*vect[i];
-        }
-        return Math.sqrt(ans);
-    }
-
-    private double[] multiplyMatrixTo(double[] v) {
-        double[] ans = new double[v.length];
-        for (int i = 0; i < matrix.length; i++) {
-            for (int j = 0; j < matrix.length; j++) {
-                ans[i] += matrix[i][j].doubleValue() * v[i];
-            }
-        }
-        return ans;
     }
 }

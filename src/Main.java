@@ -18,10 +18,33 @@ public class Main {
     }
 
     private Main() throws Exception {
+        System.out.println("Start");
+        calcGij();
         //calcG11();
         //calcInvert();
-        calcTridiagonal();
+        //calcTridiagonal();
+        System.out.println("End");
+    }
 
+    private Gij calcGij() throws Exception {
+        Random random = new Random();
+        int dimension = 2;
+        int l = 3;
+        int r = 3;
+        Double[] a = {3.0, 3.0, 3.0};//new Double[dimension + 1];Arrays.fill(a, 3.0);//random.doubles(dimension + 1).map(d -> (d * (r - l) + l)).boxed().toArray(Double[]::new);
+        Double[] b = {1.0, 1.0};//new Double[dimension];Arrays.fill(b, 1.0);//random.doubles(dimension).toArray();
+        TridiagonalMatrix<Double> matrix = new TridiagonalMatrix<>(a, b);
+        CalcGij<Double> taskGij = new CalcGij<>(matrix, 0, 2, 50, true);
+        Gij gij = taskGij.call();
+        double[] c = gij.getCdouble();
+        double[] x = gij.getXdouble();
+        for (int i = 0; i < c.length; i++) {
+            if (i > 0)
+                System.out.printf("+");
+            System.out.printf("(%f/(x-(%f)))", c[i], x[i]);
+        }
+        System.out.println();
+        return gij;
     }
 
     private void calcTridiagonal() throws Exception {
