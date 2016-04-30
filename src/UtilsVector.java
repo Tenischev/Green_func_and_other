@@ -12,10 +12,26 @@ public class UtilsVector {
         return vect;
     }
 
+    public static Complex[] add(Complex[] a, Complex[] b) {
+        Complex[] vect = new Complex[a.length];
+        for (int i = 0; i < a.length; i++) {
+            vect[i] = a[i].add(b[i]);
+        }
+        return vect;
+    }
+
     public static BigDecimal[] add(BigDecimal[] a, BigDecimal[] b) {
         BigDecimal[] vect = new BigDecimal[a.length];
         for (int i = 0; i < a.length; i++) {
             vect[i] = a[i].add(b[i]);
+        }
+        return vect;
+    }
+
+    public static Complex[] subtract(Complex[] a, Complex[] b) {
+        Complex[] vect = new Complex[a.length];
+        for (int i = 0; i < a.length; i++) {
+            vect[i] = a[i].subtract(b[i]);
         }
         return vect;
     }
@@ -36,6 +52,14 @@ public class UtilsVector {
         return vect;
     }
 
+    public static Complex multiply(Complex[] a, Complex[] b) {
+        Complex ans = Complex.ZERO;
+        for (int i = 0; i < a.length; i++) {
+            ans = ans.add(a[i].multiply(b[i]));
+        }
+        return ans;
+    }
+
     public static double multiply(double[] a, double[] b) {
         double ans = 0;
         for (int i = 0; i < a.length; i++) {
@@ -52,6 +76,22 @@ public class UtilsVector {
         return ans;
     }
 
+    public static <T extends Number> double getSecondNorm(T[] vect) {
+        double ans = 0;
+        for (T aVect : vect) {
+            ans += aVect.doubleValue() * aVect.doubleValue();
+        }
+        return Math.sqrt(ans);
+    }
+
+    public static double getSecondNorm(Complex[] vect) {
+        double ans = 0;
+        for (Complex aVect : vect) {
+            ans += aVect.doubleValue() * aVect.doubleValue();
+        }
+        return Math.sqrt(ans);
+    }
+
     public static double getSecondNorm(double[] vect) {
         double ans = 0;
         for (double aVect : vect) {
@@ -66,6 +106,23 @@ public class UtilsVector {
             ans = ans.add(aVect.multiply(aVect));
         }
         return new BigDecimal(Math.sqrt(ans.doubleValue()));
+    }
+
+    public static Complex[] multiplyToValue(Complex[] a, double val) {
+        Complex[] vect = new Complex[a.length];
+        Complex v = new Complex(val,0);
+        for (int i = 0; i < vect.length; i++) {
+            vect[i] = a[i].multiply(v);
+        }
+        return vect;
+    }
+
+    public static Complex[] multiplyToValue(Complex[] a, Complex val) {
+        Complex[] vect = new Complex[a.length];
+        for (int i = 0; i < vect.length; i++) {
+            vect[i] = a[i].multiply(val);
+        }
+        return vect;
     }
 
     public static double[] multiplyToValue(double[] a, double val) {
@@ -115,6 +172,31 @@ public class UtilsVector {
         return ans;
     }
 
+    public static Complex[] multiplyToMatrix(TridiagonalMatrix<Complex> matrix, Complex[] v) {
+        Complex[] ans = new Complex[v.length];
+        Complex[] a = matrix.getMainDiagonal();
+        Complex[] b;
+        Complex[] c;
+        if (matrix.isSymmetric()) {
+            b = matrix.getOffDiagonal();
+            c = b;
+        } else {
+            b = matrix.getUpDiagonal();
+            c = matrix.getDownDiagonal();
+        }
+        for (int i = 0; i < v.length; i++) {
+            ans[i] = Complex.ZERO;
+            if (i - 1 >= 0) {
+                ans[i] = ans[i].add(c[i - 1].multiply(v[i - 1]));
+            }
+            ans[i] = ans[i].add(a[i].multiply(v[i]));
+            if (i + 1 < v.length) {
+                ans[i] = ans[i].add(b[i].multiply(v[i + 1]));
+            }
+        }
+        return ans;
+    }
+
     public static <T extends Number> BigDecimal[] multiplyToMatrix(TridiagonalMatrix<T> matrix, BigDecimal[] v) {
         BigDecimal[] ans = new BigDecimal[v.length];
         Number[] a = matrix.getMainDiagonal();
@@ -154,6 +236,30 @@ public class UtilsVector {
             ans[i] = BigDecimal.ZERO;
             for (int j = 0; j < matrix.length; j++) {
                 ans[i] = ans[i].add(v[j].multiply(new BigDecimal(matrix[i][j].doubleValue())));
+            }
+        }
+        return ans;
+    }
+
+    public static double[] toZeros(double[] vect, double eps) {
+        double[] ans = new double[vect.length];
+        for (int i = 0; i < vect.length; i++) {
+            if (Math.abs(vect[i]) < eps) {
+                ans[i] = 0;
+            } else {
+                ans[i] = vect[i];
+            }
+        }
+        return ans;
+    }
+
+    public static <T extends Number> double[] toZeros(T[] vect, double eps) {
+        double[] ans = new double[vect.length];
+        for (int i = 0; i < vect.length; i++) {
+            if (Math.abs(vect[i].doubleValue()) < eps) {
+                ans[i] = 0;
+            } else {
+                ans[i] = vect[i].doubleValue();
             }
         }
         return ans;

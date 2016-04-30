@@ -1,0 +1,152 @@
+import java.math.BigDecimal;
+import java.util.function.Function;
+
+/**
+ * Created by kris13 on 30.04.16.
+ */
+public class CalcG11Decimal extends CalcG11<BigDecimal> {
+    public CalcG11Decimal(TridiagonalMatrix<BigDecimal> matrix, int accuracy, boolean useParallel) {
+        super(matrix, accuracy, useParallel);
+    }
+
+    @Override
+    public G11<BigDecimal> call() throws Exception {
+        c = new BigDecimal[dimension + 1];
+        x = new BigDecimal[1];
+        x[0] = new BigDecimal(a[dimension].doubleValue());
+        c[0] = BigDecimal.ONE;
+        for (step = 1; step <= dimension; step++) {
+            BigDecimal bb = new BigDecimal(b[dimension - step].doubleValue() * b[dimension - step].doubleValue());
+            if (log) System.out.print("Next step - " + step);
+            for (int j = 0; j < step; j++) {
+                if (log && BigDecimal.ZERO.equals(c[j]))
+                    System.out.print(", I'm found zero C");
+                c[j] = c[j].multiply(bb);
+            }
+            if (print) {
+                System.out.format("Root of: x = %f", a[dimension - step].doubleValue());
+                for (int j = 0; j < step; j++) {
+                    System.out.format(" + %f/(x - %f)", c[j], x[j]);
+                }
+                System.out.println();
+            }
+            findRoots(c, x, new BigDecimal(a[dimension - step].doubleValue()), step);
+            if (log) System.out.println(", roots calculate");
+            if (print) {
+                System.out.print("Is ");
+                for (int j = 0; j <= step; j++)
+                    System.out.print(rootNew[j].doubleValue() + " ");
+            }
+            counter.set(0);
+            for (int j = 0; j <= step; j++) {
+                if (step >= 50) {
+                    pool.execute(new CalcC(j));
+                } else {
+                    c[j] = BigDecimal.ONE;
+                    for (int k = 0; k < x.length; k++) {
+                        c[j] = c[j].multiply(rootNew[j].subtract(x[k]));
+                        if (k != j)
+                            c[j] = c[j].divide(rootNew[j].subtract(rootNew[k]), eps, BigDecimal.ROUND_HALF_UP);
+                    }
+                    if (x.length != j)
+                        c[j] = c[j].divide(rootNew[j].subtract(rootNew[x.length]), eps, BigDecimal.ROUND_HALF_UP);
+                    counter.incrementAndGet();
+                }
+            }
+            synchronized (lock) {
+                while (counter.get() != step + 1) {
+                    lock.wait();
+                }
+                counter.set(0);
+            }
+            x = rootNew;
+            if (print)
+                System.out.println();
+        }
+        pool.shutdown();
+        return new G11Decimal(x, c, eps);
+    }
+
+    private void findRoots(BigDecimal[] c, BigDecimal[] x, BigDecimal a, int ind) throws InterruptedException {
+        rootNew = new BigDecimal[ind + 1];
+        Function<BigDecimal, BigDecimal> func = root -> {
+            BigDecimal ans = a;
+            for (int i = 0; i < ind; i++) {
+                ans = ans.add(c[i].divide(root.subtract(x[i]), eps, BigDecimal.ROUND_HALF_UP));
+            }
+            return ans;
+        };
+        counter.set(0);
+        for (int i = 0; i < ind + 1; i++) {
+            if (i == 0)
+                pool.execute(new FindRood(i, x[i], new BigDecimal(100), func));
+                //roots[i] = findRoot(x[i], new BigDecimal(100), func);
+            else if (i == ind)
+                pool.execute(new FindRood(i, new BigDecimal(-100), x[i - 1], func));
+                //roots[i] = findRoot(new BigDecimal(-100), x[i - 1], func);
+            else
+                pool.execute(new FindRood(i, x[i], x[i - 1], func));
+            //roots[i] = findRoot(x[i], x[i - 1], func);
+        }
+        synchronized (lock) {
+            while (counter.get() != ind + 1) {
+                lock.wait();
+            }
+            counter.set(0);
+        }
+    }
+
+    private class FindRood implements Runnable {
+        private final int cur;
+        private final Function<BigDecimal, BigDecimal> func;
+        private BigDecimal r;
+        private BigDecimal l;
+
+        public FindRood(int i, BigDecimal l, BigDecimal r, Function<BigDecimal, BigDecimal> func) {
+            cur = i;
+            this.l = l;
+            this.r = r;
+            this.func = func;
+        }
+
+        @Override
+        public void run() {
+            while (r.subtract(l).compareTo(BigDecimal.ONE.scaleByPowerOfTen(-eps)) > 0) {
+                BigDecimal m = r.add(l).divide(BigDecimal.valueOf(2.0), eps, BigDecimal.ROUND_HALF_UP);
+                if (m.compareTo(func.apply(m)) > 0)
+                    r = m;
+                else
+                    l = m;
+            }
+            rootNew[cur] = l;
+            if (counter.incrementAndGet() == rootNew.length)
+                synchronized (lock) {
+                    lock.notify();
+                }
+        }
+    }
+
+    private class CalcC implements Runnable {
+        private final int cur;
+
+        public CalcC(int j) {
+            cur = j;
+        }
+
+        @Override
+        public void run() {
+            c[cur] = BigDecimal.ONE;
+            for (int k = 0; k < x.length; k++) {
+                c[cur] = c[cur].multiply(rootNew[cur].subtract(x[k]));
+                if (k != cur)
+                    c[cur] = c[cur].divide(rootNew[cur].subtract(rootNew[k]), eps, BigDecimal.ROUND_HALF_UP);
+            }
+            if (x.length != cur)
+                c[cur] = c[cur].divide(rootNew[cur].subtract(rootNew[x.length]), eps, BigDecimal.ROUND_HALF_UP);
+            if (counter.incrementAndGet() == step + 1)
+                synchronized (lock) {
+                    lock.notify();
+                }
+        }
+    }
+}
