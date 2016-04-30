@@ -33,8 +33,6 @@ public class CalcGij<T extends Number> implements Callable<Gij>{
     private CalcG11.G11 g11_1;
 
     public CalcGij(TridiagonalMatrix<T> matrix, int i, int j, int accurancy, boolean useParallel) {
-        if (i == j)
-            throw new IllegalArgumentException("i and j must be not equals");
         this.matrix = matrix;
         this.dimension = matrix.getMainDiagonal().length;
         this.eps = accurancy;
@@ -51,8 +49,10 @@ public class CalcGij<T extends Number> implements Callable<Gij>{
     public Gij call() throws Exception {
         double[] xi = getVectorDefBasis(i1, dimension);
         double[] xj = getVectorDefBasis(j1, dimension);
-        double[] y1_0 = UtilsVector.multiplyToValue(UtilsVector.add(xi, xj), 1.0 / Math.sqrt(2.0));
-        double[] y1_1 = UtilsVector.multiplyToValue(UtilsVector.subtract(xi, xj), 1.0 / Math.sqrt(2.0));
+        double[] temp = UtilsVector.add(xi, xj);
+        double[] y1_0 = UtilsVector.multiplyToValue(temp, 1.0 / UtilsVector.getSecondNorm(temp));
+        temp = UtilsVector.subtract(xi, xj);
+        double[] y1_1 = UtilsVector.multiplyToValue(temp, 1.0 / UtilsVector.getSecondNorm(temp));
         TridiagonalMatrix<Double> h0 = changeBasis(matrix, y1_0);
         pool.execute(new RunCalcG11<>(new CalcG11<>(h0, eps, true), 0));
         TridiagonalMatrix<Double> h1 = changeBasis(matrix, y1_1);
@@ -64,16 +64,20 @@ public class CalcGij<T extends Number> implements Callable<Gij>{
             counter.set(0);
         }
         pool.shutdown();
+        if (g11_0 == null)
+            return g11_1;
+        if (g11_1 == null)
+            return g11_0;
         return new Gij(g11_0, g11_1, eps);
     }
 
     private TridiagonalMatrix<Double> changeBasis(TridiagonalMatrix<T> matrix, double[] y1) {
         int dim = 0;
-        System.out.print("First basis vector ");
+        /*System.out.print("First basis vector ");
         for (int j = 0; j < y1.length; j++) {
             System.out.print(y1[j] + " ");
         }
-        System.out.println();
+        System.out.println();*/
         Double[] a = new Double[y1.length];
         Double[] b = new Double[y1.length - 1];
         double[] y2;
@@ -87,11 +91,11 @@ public class CalcGij<T extends Number> implements Callable<Gij>{
             if (b[0] - 10E-15 <= 0)
                 throw new IndexOutOfBoundsException("b is zero");
             y2 = UtilsVector.multiplyToValue(temp, 1.0 / b[0]);
-            System.out.print("Next basis vector ");
+            /*System.out.print("Next basis vector ");
             for (int i = 0; i < y2.length; i++) {
                 System.out.print(y2[i] + " ");
             }
-            System.out.println();
+            System.out.println();*/
 
             for (int i = 1; i < y1.length - 1; i++) {
                 temp = UtilsVector.multiplyToMatrix(matrix, y2);
@@ -103,13 +107,13 @@ public class CalcGij<T extends Number> implements Callable<Gij>{
                     throw new IndexOutOfBoundsException("b is zero");
                 y1 = y2;
                 y2 = UtilsVector.multiplyToValue(temp, 1.0 / b[i]);
-                System.out.print("Next basis vector ");
+                /*System.out.print("Next basis vector ");
                 for (int j = 0; j < y2.length; j++) {
                     System.out.print(y2[j] + " ");
                 }
-                System.out.println();
+                System.out.println();*/
             }
-            System.out.println();
+            //System.out.println();
             a[y1.length - 1] = UtilsVector.multiply(y2, UtilsVector.multiplyToMatrix(matrix, y2));
         } catch (IndexOutOfBoundsException e) {
             System.out.printf("Chain break on i = %d\n", dim);

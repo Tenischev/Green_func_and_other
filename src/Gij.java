@@ -63,12 +63,6 @@ public class Gij {
     }
 
     public double getValue(double w) {
-        double ans = 0;
-        double[] c = getCdouble();
-        double[] x = getXdouble();
-        for (int i = 0; i < c.length; i++) {
-            ans += c[i] / (w - x[i]);
-        }
-        return ans;
+        return getValue(new BigDecimal(w)).doubleValue();
     }
 }
