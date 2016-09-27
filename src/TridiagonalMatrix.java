@@ -1,12 +1,10 @@
-import java.lang.reflect.Array;
-
 /**
  * View of tridiagonal matrix, require array of elements main diagonal
  * and array of elements off-diagonal
  *
  * Created by kris13 on 17.03.16.
  */
-public class TridiagonalMatrix<T extends Number> {
+public class TridiagonalMatrix<T extends Number> implements Matrix<T>{
     private final boolean symmetric;
     private final T[] b;
     private final T[] a;
@@ -68,5 +66,10 @@ public class TridiagonalMatrix<T extends Number> {
         if (isSymmetric())
             throw new UnsupportedOperationException("This is symmetric matrix");
         return c;
+    }
+
+    @Override
+    public int getDimensional() {
+        return getMainDiagonal().length;
     }
 }

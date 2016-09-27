@@ -1,5 +1,6 @@
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.stream.Stream;
 
 /**
  * Created by kris13 on 26.03.16.
@@ -64,5 +65,23 @@ public class Gij {
 
     public double getValue(double w) {
         return getValue(new BigDecimal(w)).doubleValue();
+    }
+
+    public String getRepresent() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < x.length; i++) {
+            if (i > 0)
+                stringBuilder.append('+');
+            stringBuilder.append(String.format("%f/(E-%f)", c[i], x[i]));
+        }
+        return stringBuilder.toString();
+    }
+
+    public Complex getValue(Complex w) {
+        Complex ans = Complex.ZERO;
+        for (int i = 0; i < c.length; i++) {
+            ans = ans.add((new Complex(c[i].doubleValue(), 0)).multiply(w.subtract(new Complex(x[i].doubleValue(), 0)).revert()));
+        }
+        return ans;
     }
 }

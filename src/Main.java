@@ -4,9 +4,10 @@ import org.jfree.data.xy.DefaultIntervalXYDataset;
 import org.jfree.data.xy.DefaultXYDataset;
 
 import javax.swing.*;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.stream.DoubleStream;
+import java.io.File;
+import java.io.PrintStream;
+import java.math.BigDecimal;
+import java.util.*;
 
 /**
  * Created by kris13 on 05.03.16.
@@ -19,7 +20,9 @@ public class Main {
 
     private Main() throws Exception {
         System.out.println("Start");
-        calcGij();
+        //calcGij();
+        //moduleOfGreenFunc();
+        calcGijComplex();
         //calcG11();
         //calcInvert();
         //calcTridiagonal();
@@ -29,13 +32,196 @@ public class Main {
     private Gij calcGij() throws Exception {
         Random random = new Random();
         int dimension = 100;
-        Double[] a = new Double[dimension + 1];Arrays.fill(a, -3.0);//random.doubles(dimension + 1).map(d -> (d * (r - l) + l)).boxed().toArray(Double[]::new);
-        Double[] b = new Double[dimension];Arrays.fill(b, 0.1);//random.doubles(dimension).toArray();
-        TridiagonalMatrix<Double> matrix = new TridiagonalMatrix<>(a, b);
-        CalcGij<Double> taskGij = new CalcGij<>(matrix, 50, 50, 25, true);
-        Gij gij = taskGij.call();
-        System.out.println(gij.getValue(0));
-        return gij;
+        int[] l = {6, 6, 6, 4, 4, 4};
+        int[] r = {7, 7, 7, 7, 7, 7};
+        double[] V = {0.7, 0.6, 0.8, 0.7, 0.6, 0.8};
+        PrintStream printStream = new PrintStream(new File(".", "Generators_for_Ira.txt"));
+        for (int i = 0; i < 6; i++) {
+            printStream.printf("W = %d..%d, V = %f\n", l[i], r[i], V[i]);
+            for (int j = 0; j < 10; j++) {
+                final int finalI = i;
+                Double[] a = random.doubles(dimension + 1).map(d -> (d * (r[finalI] - l[finalI]) + l[finalI])).boxed().toArray(Double[]::new);//new Double[dimension + 1];Arrays.fill(a, -3.0);
+                Double[] b = new Double[dimension];Arrays.fill(b, V[finalI]);//random.doubles(dimension).toArray();
+                TridiagonalMatrix<Double> matrix = new TridiagonalMatrix<>(a, b);
+                CalcG11<Double> taskGij = new CalcG11<>(matrix, 25, true);
+                CalcG11.G11 g11 = taskGij.call();
+                //System.out.println(gij.getValue(0));
+                printStream.println(g11.getRepresent());
+            }
+            printStream.println();
+        }
+        printStream.close();
+        return null;
+    }
+
+    private void calcGijComplex() throws Exception {
+        DefaultXYDataset datasetValues = new DefaultXYDataset();
+        JFrame frame = new JFrame();
+        frame.getContentPane().add(new ChartPanel(ChartFactory.createScatterPlot("", "W/V", "Max(G_00)", datasetValues)));
+
+        Random random = new Random();
+        int dimension = 50;
+        int l = 20;
+        double[][] value3 = new double[2][101];
+        double repeat = 1.0;
+        for (int repeats = 0; repeats < repeat; repeats++) {
+            for (int j = 0; j < 1; j++) {
+
+                // For Complex
+                /*Complex[] a = new Complex[dimension + 1];//Arrays.fill(a, new Complex(-3.0, 0.01));
+                for (int i = 0; i < a.length; i++) {
+                    a[i] = new Complex((0.5 - random.nextDouble()) * (j * 0.1), 0);
+                    System.out.print(a[i] + " ");
+                }
+                    System.out.println();
+                Complex[] b = new Complex[dimension];Arrays.fill(b, Complex.ONE);
+
+                Matrix<Complex> matrix = new TridiagonalMatrix<>(a, b);//new CheatMatrix<>(pos, rows);
+                CalcGijComplex taskGij = new CalcGijComplex(matrix, matrix.getDimensional() / 2, matrix.getDimensional() / 2, 25, true);
+                CalcGijComplex.GijComplex gij = taskGij.call();
+
+                Complex val = gij.getReal(new Complex(0, 0.000001));
+                */
+
+
+                // For Double
+                Double[] a = new Double[dimension + 1];Arrays.fill(a, -3.0);
+                /*for (int i = 0; i < a.length; i++) {
+                    a[i] = ((0.5 - random.nextDouble()) * (j * 0.1));
+                    System.out.print(a[i] + " ");
+                }*/
+                System.out.println();
+                Double[] b = new Double[dimension];Arrays.fill(b, 1.0);
+
+                Matrix<Double> matrix = new TridiagonalMatrix<>(a, b);//new CheatMatrix<>(pos, rows);
+                CalcGijDouble taskGij = new CalcGijDouble(matrix, dimension / 2, dimension / 2, 25, true);
+                Gij gij = taskGij.call();
+
+                Complex val = gij.getValue(Complex.ZERO);
+                System.out.println(gij.getValue(0.0));
+
+
+
+                //For Decimal
+                /*BigDecimal[] a = new BigDecimal[dimension + 1];Arrays.fill(a, new BigDecimal(-3.0));
+                /*for (int i = 0; i < a.length; i++) {
+                    a[i] = new BigDecimal((0.5 - random.nextDouble()) * (j * 0.1));
+                    System.out.print(a[i] + " ");
+                }
+                System.out.println();
+                BigDecimal[] b = new BigDecimal[dimension];Arrays.fill(b, BigDecimal.ONE);
+
+                Matrix<BigDecimal> matrix = new TridiagonalMatrix<>(a, b);//new CheatMatrix<>(pos, rows);
+                CalcGijDecimal taskGij = new CalcGijDecimal(matrix, dimension / 2, dimension / 2, 25, true);
+                Gij gij = taskGij.call();
+
+                Complex val = gij.getValue(new Complex(0, 0));*/
+
+                System.out.println(val);
+                value3[0][j] = j * 0.1;
+                double sq = val.doubleValue() * val.doubleValue();
+                value3[1][j] = value3[1][j] + (sq > 4 ? 4 : sq);
+                //System.out.println("Step");
+            }
+            dimension++;
+        }
+        for (int j = 0; j < 101; j++) {
+            value3[1][j] /= repeat;
+        }
+        /*double[] c = gij.getCdouble();
+        double[] x = gij.getXdouble();
+        double[][] value3 = new double[2][c.length];
+        for (int i = 0; i < c.length; i++) {
+            value3[0][i] = i;
+            value3[1][i] = c[i];
+            System.out.print(c[i] + " ");
+        }
+        System.out.println();
+        double max = -Double.MAX_VALUE;
+        double min = Double.MAX_VALUE;
+        for (int i = 0; i < x.length; i++) {
+            max = Math.max(max, x[i]);
+            min = Math.min(min, x[i]);
+        }
+        System.out.printf("Max = %f, Min = %f\n", max, min);*/
+        //System.out.printf("%s\n", gij.getReal(Complex.ONE));
+        datasetValues.addSeries("", value3);
+        //datasetValues.addSeries(String.format("Re(G)", j), value3);
+        //datasetValues.addSeries(String.format("Im(G) %s", j==0?"":"pertr"), value2);
+        //datasetValues.addSeries(String.format("C on %d", l), value3);
+        frame.pack();
+        frame.setVisible(true);
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+    }
+
+     /*Collection<Complex>[] rows = new ArrayList[(dimension + 1) * (dimension + 1)];
+                int[] pos = new int[rows.length];
+                for (int i = 0; i < dimension + 1; i++) {
+                    for (int k = 0; k < dimension + 1; k++) {
+                        rows[i * (dimension + 1) + k] = new ArrayList<>();
+                        if (i != 0) {
+                            rows[i * (dimension + 1) + k].add(Complex.ONE);
+                            pos[i * (dimension + 1) + k]++;
+                        }
+                        if (k != 0) {
+                            rows[i * (dimension + 1) + k].add(Complex.ONE);
+                            pos[i * (dimension + 1) + k]++;
+                        }
+                        rows[i * (dimension + 1) + k].add(new Complex((0.5 - random.nextDouble()) * (j * 0.1), 0));
+                        if (i != dimension) {
+                            rows[i * (dimension + 1) + k].add(Complex.ONE);
+                        }
+                        if (k != dimension) {
+                            rows[i * (dimension + 1) + k].add(Complex.ONE);
+                        }
+                    }
+                }*/
+                /*Collection<Complex>[] rows = new ArrayList[(dimension + 1)];
+                int[] pos = new int[rows.length];
+                for (int i = 0; i < dimension + 1; i++) {
+                    rows[i] = new ArrayList<>();
+                    if (i != 0) {
+                        rows[i].add(Complex.ONE);
+                        pos[i]++;
+                    }
+                    rows[i].add(new Complex((0.5 - random.nextDouble()) * (j * 0.1), 0));
+                    if (i != dimension) {
+                        rows[i].add(Complex.ONE);
+                    }
+                }*/
+
+    private void moduleOfGreenFunc() throws Exception {
+        Random random = new Random();
+        int dimension = 8;
+        Complex[] a = new Complex[dimension + 1];//Arrays.fill(a, new Complex(-3.0, -0.001));
+        for (int i = 0; i < a.length; i++) {
+            a[i] = new Complex(-3.0 + (0.5 - random.nextDouble()) / 2.0, 0);
+            System.out.printf("%f\t", a[i].doubleValue());
+        }
+        System.out.println("\n");
+        Complex[] b = new Complex[dimension];
+        Arrays.fill(b, Complex.ONE);
+
+        TridiagonalMatrix<Complex> matrix = new TridiagonalMatrix<>(a, b);
+
+
+        Complex[][] ans = new Complex[dimension + 1][dimension + 1];
+        for (int i = 0; i <= dimension; i++) {
+            for (int j = 0; j <= dimension; j++) {
+                CalcGijComplex taskGij = new CalcGijComplex(matrix, i, j, 25, true);
+                CalcGijComplex.GijComplex gij = taskGij.call();
+
+                Complex val = gij.getReal(Complex.ONE);
+                ans[i][j] = val;
+                System.out.printf("%f\t", val.doubleValue());
+            }
+            System.out.println();/*
+            double sum = 0;
+            for (int j = 0; j < dimension; j++) {
+                sum += ans[i][j].doubleValue();
+            }
+            System.out.println(sum);*/
+        }
     }
 
     private void calcTridiagonal() throws Exception {

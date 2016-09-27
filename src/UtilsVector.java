@@ -1,4 +1,7 @@
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Created by kris13 on 26.03.16.
@@ -12,10 +15,26 @@ public class UtilsVector {
         return vect;
     }
 
-    public static BigDecimal[] add(BigDecimal[] a, BigDecimal[] b) {
-        BigDecimal[] vect = new BigDecimal[a.length];
+    public static Double[] add(Double[] a, Double[] b) {
+        Double[] vect = new Double[a.length];
+        for (int i = 0; i < a.length; i++) {
+            vect[i] = a[i] + b[i];
+        }
+        return vect;
+    }
+
+    public static Complex[] add(Complex[] a, Complex[] b) {
+        Complex[] vect = new Complex[a.length];
         for (int i = 0; i < a.length; i++) {
             vect[i] = a[i].add(b[i]);
+        }
+        return vect;
+    }
+
+    public static BigDecimal[] add(BigDecimal[] a, BigDecimal[] b, MathContext context) {
+        BigDecimal[] vect = new BigDecimal[a.length];
+        for (int i = 0; i < a.length; i++) {
+            vect[i] = a[i].add(b[i], context);
         }
         return vect;
     }
@@ -28,12 +47,44 @@ public class UtilsVector {
         return vect;
     }
 
-    public static BigDecimal[] subtract(BigDecimal[] a, BigDecimal[] b) {
-        BigDecimal[] vect = new BigDecimal[a.length];
+    public static Double[] subtract(Double[] a, Double[] b) {
+        Double[] vect = new Double[a.length];
+        for (int i = 0; i < a.length; i++) {
+            vect[i] = a[i] - b[i];
+        }
+        return vect;
+    }
+
+    public static Complex[] subtract(Complex[] a, Complex[] b) {
+        Complex[] vect = new Complex[a.length];
         for (int i = 0; i < a.length; i++) {
             vect[i] = a[i].subtract(b[i]);
         }
         return vect;
+    }
+
+    public static BigDecimal[] subtract(BigDecimal[] a, BigDecimal[] b, MathContext context) {
+        BigDecimal[] vect = new BigDecimal[a.length];
+        for (int i = 0; i < a.length; i++) {
+            vect[i] = a[i].subtract(b[i], context);
+        }
+        return vect;
+    }
+
+    public static Complex multiply(Complex[] a, Complex[] b) {
+        Complex ans = Complex.ZERO;
+        for (int i = 0; i < a.length; i++) {
+            ans = ans.add(a[i].multiply(b[i]));
+        }
+        return ans;
+    }
+
+    public static <T extends Number> T multiply(T[] a, T[] b) {
+        Number ans = 0d;
+        for (int i = 0; i < a.length; i++) {
+            ans = ans.doubleValue() + a[i].doubleValue() * b[i].doubleValue();
+        }
+        return (T) ans;
     }
 
     public static double multiply(double[] a, double[] b) {
@@ -44,10 +95,10 @@ public class UtilsVector {
         return ans;
     }
 
-    public static BigDecimal multiply(BigDecimal[] a, BigDecimal[] b) {
+    public static BigDecimal multiply(BigDecimal[] a, BigDecimal[] b, MathContext context) {
         BigDecimal ans = BigDecimal.ZERO;
         for (int i = 0; i < a.length; i++) {
-            ans = ans.add(a[i].multiply(b[i]));
+            ans = ans.add(a[i].multiply(b[i], context), context);
         }
         return ans;
     }
@@ -60,18 +111,42 @@ public class UtilsVector {
         return Math.sqrt(ans);
     }
 
-    public static BigDecimal getSecondNorm(BigDecimal[] vect) {
+    public static Double getSecondNorm(Double[] vect) {
+        Double ans = 0.0;
+        for (Double aVect : vect) {
+            ans += aVect * aVect;
+        }
+        return Math.sqrt(ans);
+    }
+
+    public static BigDecimal getSecondNorm(BigDecimal[] vect, MathContext mathContext) {
         BigDecimal ans = BigDecimal.ZERO;
         for (BigDecimal aVect : vect) {
-            ans = ans.add(aVect.multiply(aVect));
+            ans = ans.add(aVect.multiply(aVect, mathContext), mathContext);
         }
         return new BigDecimal(Math.sqrt(ans.doubleValue()));
+    }
+
+    public static Complex getSecondNorm(Complex[] vect) {
+        double ans = 0;
+        for (Complex aVect : vect) {
+            ans += aVect.doubleValue() * aVect.doubleValue();
+        }
+        return new Complex(Math.sqrt(ans), 0);
     }
 
     public static double[] multiplyToValue(double[] a, double val) {
         double[] vect = new double[a.length];
         for (int i = 0; i < vect.length; i++) {
             vect[i] = a[i]*val;
+        }
+        return vect;
+    }
+
+    public static Double[] multiplyToValue(Double[] a, Double val) {
+        Double[] vect = new Double[a.length];
+        for (int i = 0; i < vect.length; i++) {
+            vect[i] = a[i] * val;
         }
         return vect;
     }
@@ -85,16 +160,98 @@ public class UtilsVector {
         return vect;
     }
 
-    public static BigDecimal[] multiplyToValue(BigDecimal[] a, BigDecimal val) {
+    public static BigDecimal[] multiplyToValue(BigDecimal[] a, BigDecimal val, MathContext context) {
         BigDecimal[] vect = new BigDecimal[a.length];
+        for (int i = 0; i < vect.length; i++) {
+            vect[i] = a[i].multiply(val, context);
+        }
+        return vect;
+    }
+
+    public static Complex[] multiplyToValue(Complex[] a, Complex val) {
+        Complex[] vect = new Complex[a.length];
         for (int i = 0; i < vect.length; i++) {
             vect[i] = a[i].multiply(val);
         }
         return vect;
     }
 
-    public static <T extends Number> double[] multiplyToMatrix(TridiagonalMatrix<T> matrix, double[] v) {
-        double[] ans = new double[v.length];
+    public static <T extends Number> T[] multiplyToMatrix(Matrix<T> matrix, T[] v) {
+        if (matrix instanceof TridiagonalMatrix) {
+            TridiagonalMatrix<T> tridiagonalMatrix = (TridiagonalMatrix<T>) matrix;
+            return multiplyToMatrix(tridiagonalMatrix, v);
+        } else if (matrix instanceof CheatMatrix) {
+            CheatMatrix<T> cheatMatrix = (CheatMatrix<T>) matrix;
+            return multiplyToMatrix(cheatMatrix, v);
+        } else {
+            throw new IllegalArgumentException("What is this the Matrix?");
+        }
+    }
+
+    public static Complex[] multiplyToMatrix(TridiagonalMatrix<Complex> matrix, Complex[] v) {
+        Complex[] ans = new Complex[v.length];
+        Complex[] a = matrix.getMainDiagonal();
+        Complex[] b;
+        Complex[] c;
+        if (matrix.isSymmetric()) {
+            b = matrix.getOffDiagonal();
+            c = b;
+        } else {
+            b = matrix.getUpDiagonal();
+            c = matrix.getDownDiagonal();
+        }
+        for (int i = 0; i < v.length; i++) {
+            ans[i] = Complex.ZERO;
+            if (i - 1 >= 0)
+                ans[i] = ans[i].add(c[i - 1].multiply(v[i - 1]));
+            ans[i] = ans[i].add(a[i].multiply(v[i]));
+            if (i + 1 < v.length)
+                ans[i] = ans[i].add(b[i].multiply(v[i + 1]));
+        }
+        return ans;
+    }
+
+    public static Complex[] multiplyToMatrix(CheatMatrix<Complex> matrix, Complex[] v) {
+        Complex[] ans = new Complex[v.length];
+        for (int i = 0; i < matrix.getDimensional(); i++) {
+            ans[i] = Complex.ZERO;
+            Collection<Complex> row = matrix.getRow(i);
+            Iterator<Complex> iterator = row.iterator();
+            for (int j = i; j < i + row.size(); j++) {
+                ans[i] = ans[i].add(iterator.next().multiply(v[j - matrix.getPositionDiagonal(i)]));
+            }
+        }
+        return ans;
+    }
+
+    public static <T extends Number> T[] multiplyToMatrix(CheatMatrix<T> matrix, T[] v) {
+        if (v instanceof Complex[]) {
+            CheatMatrix<Complex> complexCheatMatrix = (CheatMatrix<Complex>) matrix;
+            Complex[] complexV = (Complex[]) v;
+            return (T[]) multiplyToMatrix(complexCheatMatrix, complexV);
+        }
+        Double[] ans = new Double[v.length];
+        for (int i = 0; i < v.length; i++) {
+            ans[i] = 0d;
+            Collection<T> row = matrix.getRow(i);
+            for (T e : row) {
+                ans[i] += e.doubleValue() * v[i].doubleValue();
+            }
+        }
+        return (T[]) ans;
+    }
+
+    public static <T extends Number> T[] multiplyToMatrix(TridiagonalMatrix<T> matrix, T[] v) {
+        if (v instanceof Complex[]) {
+            TridiagonalMatrix<Complex> complexTridiagonalMatrix = (TridiagonalMatrix<Complex>) matrix;
+            Complex[] complexV = (Complex[]) v;
+            return (T[]) multiplyToMatrix(complexTridiagonalMatrix, complexV);
+        }
+        if (v instanceof BigDecimal[]) {
+            BigDecimal[] decV = (BigDecimal[]) v;
+            return (T[]) multiplyToMatrix(matrix, decV);
+        }
+        Double[] ans = new Double[v.length];
         Number[] a = matrix.getMainDiagonal();
         Number[] b;
         Number[] c;
@@ -106,11 +263,60 @@ public class UtilsVector {
             c = matrix.getDownDiagonal();
         }
         for (int i = 0; i < v.length; i++) {
+            ans[i] = 0d;
             if (i - 1 >= 0)
-                ans[i] += c[i - 1].doubleValue() * v[i - 1];
-            ans[i] += a[i].doubleValue() * v[i];
+                ans[i] += c[i - 1].doubleValue() * v[i - 1].doubleValue();
+            ans[i] += a[i].doubleValue() * v[i].doubleValue();
             if (i + 1 < v.length)
-                ans[i] += b[i].doubleValue() * v[i + 1];
+                ans[i] += b[i].doubleValue() * v[i + 1].doubleValue();
+        }
+        return (T[]) ans;
+    }
+
+    public static BigDecimal[] multiplyToMatrix(Matrix<BigDecimal> matrix, BigDecimal[] y1, MathContext context) {
+        if (matrix instanceof TridiagonalMatrix) {
+            TridiagonalMatrix<BigDecimal> tridiagonalMatrix = (TridiagonalMatrix<BigDecimal>) matrix;
+            return multiplyToMatrix(tridiagonalMatrix, y1, context);
+        }
+        if (matrix instanceof CheatMatrix) {
+            CheatMatrix<BigDecimal> tridiagonalMatrix = (CheatMatrix<BigDecimal>) matrix;
+            return multiplyToMatrix(tridiagonalMatrix, y1, context);
+        }
+        throw new IllegalArgumentException("Wrong matrix type");
+    }
+
+    public static BigDecimal[] multiplyToMatrix(TridiagonalMatrix<BigDecimal> matrix, BigDecimal[] v, MathContext context) {
+        BigDecimal[] ans = new BigDecimal[v.length];
+        BigDecimal[] a = matrix.getMainDiagonal();
+        BigDecimal[] b;
+        BigDecimal[] c;
+        if (matrix.isSymmetric()) {
+            b = matrix.getOffDiagonal();
+            c = b;
+        } else {
+            b = matrix.getUpDiagonal();
+            c = matrix.getDownDiagonal();
+        }
+        for (int i = 0; i < v.length; i++) {
+            ans[i] = BigDecimal.ZERO;
+            if (i - 1 >= 0)
+                ans[i] = ans[i].add(v[i - 1].multiply(c[i - 1], context), context);
+            ans[i] = ans[i].add(v[i].multiply(a[i], context), context);
+            if (i + 1 < v.length)
+                ans[i] = ans[i].add(v[i + 1].multiply(b[i], context), context);
+        }
+        return ans;
+    }
+
+    public static BigDecimal[] multiplyToMatrix(CheatMatrix<BigDecimal> matrix, BigDecimal[] v, MathContext context) {
+        BigDecimal[] ans = new BigDecimal[v.length];
+        for (int i = 0; i < matrix.getDimensional(); i++) {
+            ans[i] = BigDecimal.ZERO;
+            Collection<BigDecimal> row = matrix.getRow(i);
+            Iterator<BigDecimal> iterator = row.iterator();
+            for (int j = i; j < i + row.size(); j++) {
+                ans[i] = ans[i].add(iterator.next().multiply(v[j - matrix.getPositionDiagonal(i)], context), context);
+            }
         }
         return ans;
     }
@@ -157,5 +363,46 @@ public class UtilsVector {
             }
         }
         return ans;
+    }
+
+    public static Double[] toZeros(Double[] vect, double eps) {
+        Double[] ans = new Double[vect.length];
+        for (int i = 0; i < vect.length; i++) {
+            if (Math.abs(vect[i]) < eps) {
+                ans[i] = 0.0;
+            } else {
+                ans[i] = vect[i];
+            }
+        }
+        return ans;
+    }
+
+    public static Complex[] toZeros(Complex[] vect, double eps) {
+        Complex[] ans = new Complex[vect.length];
+        for (int i = 0; i < vect.length; i++) {
+            if (Math.abs(vect[i].doubleValue()) < eps) {
+                ans[i] = Complex.ZERO;
+            } else {
+                ans[i] = vect[i];
+            }
+        }
+        return ans;
+    }
+
+    public static Complex[] onI(Complex[] x) {
+        Complex[] ans = new Complex[x.length];
+        for (int i = 0; i < x.length; i++) {
+            ans[i] = x[i].onI();
+        }
+        return ans;
+    }
+
+    public static BigDecimal[] toZeros(BigDecimal[] vect, MathContext context) {
+        for (int i = 0; i < vect.length; i++) {
+            if (vect[i].scale() > context.getPrecision()) {
+                vect[i] = vect[i].setScale(context.getPrecision(), context.getRoundingMode());
+            }
+        }
+        return vect;
     }
 }
