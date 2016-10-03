@@ -60,62 +60,21 @@ public class Main {
         frame.getContentPane().add(new ChartPanel(ChartFactory.createScatterPlot("", "W/V", "Max(G_00)", datasetValues)));
 
         Random random = new Random();
-        int dimension = 50;
+        int dimension = 100;
         int l = 20;
         double[][] value3 = new double[2][101];
         double repeat = 1.0;
         for (int repeats = 0; repeats < repeat; repeats++) {
             for (int j = 0; j < 1; j++) {
 
-                // For Complex
-                /*Complex[] a = new Complex[dimension + 1];//Arrays.fill(a, new Complex(-3.0, 0.01));
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = new Complex((0.5 - random.nextDouble()) * (j * 0.1), 0);
-                    System.out.print(a[i] + " ");
-                }
-                    System.out.println();
-                Complex[] b = new Complex[dimension];Arrays.fill(b, Complex.ONE);
-
-                Matrix<Complex> matrix = new TridiagonalMatrix<>(a, b);//new CheatMatrix<>(pos, rows);
-                CalcGijComplex taskGij = new CalcGijComplex(matrix, matrix.getDimensional() / 2, matrix.getDimensional() / 2, 25, true);
+                Matrix<Complex> matrix = CheatMatrix.createCheatMatrix(1, dimension, new Complex(-3.0, -0.001), Complex.ONE, Complex.ONE);
+                //new TridiagonalMatrix<>(a, b);//new CheatMatrix<>(pos, rows);
+                CalcGijComplex taskGij = new CalcGijComplex(matrix, dimension / 2, dimension / 2, 25, true);
+                //CalcGijDecimal taskGij = new CalcGijDecimal(matrix, dimension / 2, dimension / 2, 25, true);
                 CalcGijComplex.GijComplex gij = taskGij.call();
 
-                Complex val = gij.getReal(new Complex(0, 0.000001));
-                */
-
-
-                // For Double
-                Double[] a = new Double[dimension + 1];Arrays.fill(a, -3.0);
-                /*for (int i = 0; i < a.length; i++) {
-                    a[i] = ((0.5 - random.nextDouble()) * (j * 0.1));
-                    System.out.print(a[i] + " ");
-                }*/
-                System.out.println();
-                Double[] b = new Double[dimension];Arrays.fill(b, 1.0);
-
-                Matrix<Double> matrix = new TridiagonalMatrix<>(a, b);//new CheatMatrix<>(pos, rows);
-                CalcGijDouble taskGij = new CalcGijDouble(matrix, dimension / 2, dimension / 2, 25, true);
-                Gij gij = taskGij.call();
-
-                Complex val = gij.getValue(Complex.ZERO);
-                System.out.println(gij.getValue(0.0));
-
-
-
-                //For Decimal
-                /*BigDecimal[] a = new BigDecimal[dimension + 1];Arrays.fill(a, new BigDecimal(-3.0));
-                /*for (int i = 0; i < a.length; i++) {
-                    a[i] = new BigDecimal((0.5 - random.nextDouble()) * (j * 0.1));
-                    System.out.print(a[i] + " ");
-                }
-                System.out.println();
-                BigDecimal[] b = new BigDecimal[dimension];Arrays.fill(b, BigDecimal.ONE);
-
-                Matrix<BigDecimal> matrix = new TridiagonalMatrix<>(a, b);//new CheatMatrix<>(pos, rows);
-                CalcGijDecimal taskGij = new CalcGijDecimal(matrix, dimension / 2, dimension / 2, 25, true);
-                Gij gij = taskGij.call();
-
-                Complex val = gij.getValue(new Complex(0, 0));*/
+                Complex val = gij.getReal(Complex.ONE);
+                //Complex val = gij.getValue(Complex.ONE);
 
                 System.out.println(val);
                 value3[0][j] = j * 0.1;

@@ -2,6 +2,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Created by kris13 on 26.03.16.
@@ -215,10 +216,10 @@ public class UtilsVector {
         Complex[] ans = new Complex[v.length];
         for (int i = 0; i < matrix.getDimensional(); i++) {
             ans[i] = Complex.ZERO;
-            Collection<Complex> row = matrix.getRow(i);
-            Iterator<Complex> iterator = row.iterator();
-            for (int j = i; j < i + row.size(); j++) {
-                ans[i] = ans[i].add(iterator.next().multiply(v[j - matrix.getPositionDiagonal(i)]));
+            List<Complex> row = matrix.getRow(i);
+            List<Integer> pos = matrix.getPositions(i);
+            for (int j = 0; j < pos.size(); j++) {
+                ans[i] = ans[i].add(row.get(j).multiply(v[pos.get(j)]));
             }
         }
         return ans;
@@ -233,9 +234,10 @@ public class UtilsVector {
         Double[] ans = new Double[v.length];
         for (int i = 0; i < v.length; i++) {
             ans[i] = 0d;
-            Collection<T> row = matrix.getRow(i);
-            for (T e : row) {
-                ans[i] += e.doubleValue() * v[i].doubleValue();
+            List<T> row = matrix.getRow(i);
+            List<Integer> pos = matrix.getPositions(i);
+            for (int j = 0; j < pos.size(); j++) {
+                ans[i] += row.get(j).doubleValue() * v[pos.get(j)].doubleValue();
             }
         }
         return (T[]) ans;
@@ -312,10 +314,10 @@ public class UtilsVector {
         BigDecimal[] ans = new BigDecimal[v.length];
         for (int i = 0; i < matrix.getDimensional(); i++) {
             ans[i] = BigDecimal.ZERO;
-            Collection<BigDecimal> row = matrix.getRow(i);
-            Iterator<BigDecimal> iterator = row.iterator();
-            for (int j = i; j < i + row.size(); j++) {
-                ans[i] = ans[i].add(iterator.next().multiply(v[j - matrix.getPositionDiagonal(i)], context), context);
+            List<BigDecimal> row = matrix.getRow(i);
+            List<Integer> pos = matrix.getPositions(i);
+            for (int j = 0; j < pos.size(); j++) {
+                ans[i] = ans[i].add(row.get(j).multiply(v[pos.get(j)]));
             }
         }
         return ans;
