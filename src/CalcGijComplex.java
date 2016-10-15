@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class CalcGijComplex implements Callable<CalcGijComplex.GijComplex>{
     private final Matrix<Complex> matrix;
-    private final ExecutorService pool;
+   // private final ExecutorService pool;
     private final int i1;
     private final int j1;
     private final int dimension;
@@ -32,7 +32,7 @@ public class CalcGijComplex implements Callable<CalcGijComplex.GijComplex>{
             THREADS = Runtime.getRuntime().availableProcessors() + 1;
         else
             THREADS = 1;
-        pool = Executors.newFixedThreadPool(THREADS);
+ //       pool = Executors.newFixedThreadPool(THREADS);
     }
 
     @Override
@@ -45,7 +45,11 @@ public class CalcGijComplex implements Callable<CalcGijComplex.GijComplex>{
         Complex[] y1_1 = UtilsVector.multiplyToValue(temp, UtilsVector.getSecondNorm(temp).revert());
         TridiagonalMatrix<Complex> h0 = changeBasis(matrix, y1_0);
         TridiagonalMatrix<Complex> h1 = changeBasis(matrix, y1_1);
-        pool.shutdown();
+        /*System.out.println("H0:");
+        System.out.println(h0);
+        System.out.println("H1:");
+        System.out.println(h1);*/
+ //       pool.shutdown();
         return new GijComplex(h0, h1);
     }
 

@@ -42,26 +42,42 @@ public class CheatMatrix<T extends Number> implements Matrix<T> {
                     curentRow.add(v);
                     curentPos.add(point - size);
                 }
-                // Right element
-                if (j != size - 1) {
-                    curentRow.add(v);
-                    curentPos.add(point + 1);
-                }
-                // Diagonal
-                curentRow.add(createDiagElement(random.nextDouble(), e, w));
-                curentPos.add(point);
-                // Down element
-                if (i != size - 1) {
-                    curentRow.add(v);
-                    curentPos.add(point + size);
-                }
                 // Left element
                 if (j != 0) {
                     curentRow.add(v);
                     curentPos.add(point - 1);
                 }
+                // Diagonal
+                curentRow.add(createDiagElement(random.nextDouble(), e, w));
+                curentPos.add(point);
+                // Right element
+                if (j != size - 1) {
+                    curentRow.add(v);
+                    curentPos.add(point + 1);
+                }
+                // Down element
+                if (i != size - 1) {
+                    curentRow.add(v);
+                    curentPos.add(point + size);
+                }
             }
         }
+        /*for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                List<T> el = rows[i * size + j];
+                List<Integer> p = pos[i * size + j];
+                int ind = 0;
+                for (int k = 0; k < size * size; k++) {
+                    if (ind < p.size() && k == p.get(ind)) {
+                        System.out.print(el.get(ind).doubleValue() + " \t");
+                        ind++;
+                    } else {
+                        System.out.print("0 \t");
+                    }
+                }
+                System.out.println();
+            }
+        }*/
         return new CheatMatrix<T>(pos, rows);
     }
 

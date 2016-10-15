@@ -46,6 +46,32 @@ public class TridiagonalMatrix<T extends Number> implements Matrix<T>{
         this.symmetric = false;
     }
 
+    public static TridiagonalMatrix<Complex> sum(TridiagonalMatrix<Complex> h0, TridiagonalMatrix<Complex> h1) {
+        Complex[] a = new Complex[h0.getDimensional()];
+        Complex[] b = new Complex[a.length - 1];
+        Complex[] c = new Complex[a.length - 1];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = h0.getMainDiagonal()[i].add(h1.getMainDiagonal()[i]);
+            if (i != a.length - 1) {
+                b[i] = h0.getUpDiagonal()[i].add(h1.getUpDiagonal()[i]);
+                c[i] = h0.getDownDiagonal()[i].add(h1.getDownDiagonal()[i]);
+            }
+        }
+        return new TridiagonalMatrix<Complex>(a, b, c);
+    }
+
+    public static TridiagonalMatrix<Complex> sumEasy(TridiagonalMatrix<Complex> h0, TridiagonalMatrix<Complex> h1) {
+        Complex[] a = new Complex[h0.getDimensional()];
+        Complex[] b = new Complex[a.length - 1];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = h0.getMainDiagonal()[i].add(h1.getMainDiagonal()[i]);
+            if (i != a.length - 1) {
+                b[i] = h0.getOffDiagonal()[i].add(h1.getOffDiagonal()[i]);
+            }
+        }
+        return new TridiagonalMatrix<Complex>(a, b);
+    }
+
     public static <T extends Number> TridiagonalMatrix<T> generateOneDimMatrix(int size, T e, T w, T v) {
         T[] a;
         Random random = new Random();
@@ -122,5 +148,19 @@ public class TridiagonalMatrix<T extends Number> implements Matrix<T>{
     @Override
     public int getDimensional() {
         return getMainDiagonal().length;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < a.length; i++) {
+            stringBuilder.append(a[i]).append(' ');
+        }
+        stringBuilder.append('\n');
+        for (int i = 0; i < b.length; i++) {
+            stringBuilder.append(b[i]).append(' ');
+        }
+        stringBuilder.append('\n');
+        return stringBuilder.toString();
     }
 }

@@ -115,7 +115,7 @@ public class CalcG11<T extends Number> implements Callable<CalcG11.G11> {
                 }
                 counter.set(0);
             }
-            calcAverageC();
+            //calcAverageC();
             x = rootNew;
             if (print)
                 System.out.println();

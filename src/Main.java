@@ -4,6 +4,7 @@ import org.jfree.data.xy.DefaultIntervalXYDataset;
 import org.jfree.data.xy.DefaultXYDataset;
 
 import javax.swing.*;
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.io.File;
 import java.io.PrintStream;
 import java.math.BigDecimal;
@@ -60,32 +61,61 @@ public class Main {
         frame.getContentPane().add(new ChartPanel(ChartFactory.createScatterPlot("", "W/V", "Max(G_00)", datasetValues)));
 
         Random random = new Random();
-        int dimension = 100;
+        int dimension = 7;
         int l = 20;
-        double[][] value3 = new double[2][101];
-        double repeat = 1.0;
-        for (int repeats = 0; repeats < repeat; repeats++) {
-            for (int j = 0; j < 1; j++) {
+        double[][] value2 = new double[2][31];
+        double[][] value3 = new double[2][31];
+        double repeat = 100;
+        for (int i = 0; i < 15; i++) {
+            double ave = 0;
+            double f = 0;
+            double max = 0;
+            long start = System.currentTimeMillis();
+            double value = 0.5 + 0.5 * i;
+            double e = 0;
+            double S = 1e-6;
+            System.out.println("Run for value " + value);
+            for (int j = 0; j < repeat; j++) {
 
-                Matrix<Complex> matrix = CheatMatrix.createCheatMatrix(1, dimension, new Complex(-3.0, -0.001), Complex.ONE, Complex.ONE);
+                Matrix<Complex> matrix = CheatMatrix.createCheatMatrix(2, dimension, new Complex(e, S), new Complex(value, 0.0), Complex.ONE);
                 //new TridiagonalMatrix<>(a, b);//new CheatMatrix<>(pos, rows);
-                CalcGijComplex taskGij = new CalcGijComplex(matrix, dimension / 2, dimension / 2, 25, true);
+                int point = (dimension * dimension) / 2;
+                CalcGijComplex taskGij = new CalcGijComplex(matrix, point, point, 25, true);
                 //CalcGijDecimal taskGij = new CalcGijDecimal(matrix, dimension / 2, dimension / 2, 25, true);
                 CalcGijComplex.GijComplex gij = taskGij.call();
 
-                Complex val = gij.getReal(Complex.ONE);
+                /*CalcG11<Complex> calcG11_1 = new CalcG11<>(gij.r1, 25, true);
+                CalcG11<Complex> calcG11_2 = new CalcG11<>(gij.r2, 25, true);
+                CalcG11.G11 g11_1 = calcG11_1.call();*/
+
+                Complex val = gij.getReal(Complex.ZERO);
+                //System.out.println(val);
+                double sq = val.doubleValue();
+                ave += sq;
+                max = Math.max(max, sq);
+                f += Math.abs(sq / (-val.getImage() / Math.PI));
+                //System.out.println(val.doubleValue());
                 //Complex val = gij.getValue(Complex.ONE);
 
-                System.out.println(val);
-                value3[0][j] = j * 0.1;
-                double sq = val.doubleValue() * val.doubleValue();
-                value3[1][j] = value3[1][j] + (sq > 4 ? 4 : sq);
+                //System.out.println(val);
+                //value3[0][j] = j * 0.1;
+                //double sq = val.doubleValue() * val.doubleValue();
+                //value3[1][j] = value3[1][j] + (sq > 4 ? 4 : sq);
                 //System.out.println("Step");
             }
-            dimension++;
-        }
-        for (int j = 0; j < 101; j++) {
-            value3[1][j] /= repeat;
+            f /= repeat;
+            ave /= repeat;
+            ave *= 1e-2;
+            max *= 1e-2;
+            f *= S;
+            f /= Math.PI;
+            value2[0][i] = value;
+            value3[0][i] = value;
+            value2[1][i] = Math.min(ave, 4.0);
+            value3[1][i] = Math.min(max, 4.0);
+            //value3[1][i] = ave;
+            System.out.println("Average = " + ave + "; F = " + f + "; Max = " + max);
+            System.out.println("Time = " + (System.currentTimeMillis() - start));
         }
         /*double[] c = gij.getCdouble();
         double[] x = gij.getXdouble();
@@ -104,7 +134,8 @@ public class Main {
         }
         System.out.printf("Max = %f, Min = %f\n", max, min);*/
         //System.out.printf("%s\n", gij.getReal(Complex.ONE));
-        datasetValues.addSeries("", value3);
+        datasetValues.addSeries("Ave", value2);
+        datasetValues.addSeries("Max", value3);
         //datasetValues.addSeries(String.format("Re(G)", j), value3);
         //datasetValues.addSeries(String.format("Im(G) %s", j==0?"":"pertr"), value2);
         //datasetValues.addSeries(String.format("C on %d", l), value3);
