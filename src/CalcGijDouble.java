@@ -74,35 +74,35 @@ public class CalcGijDouble implements Callable<Gij>{
     private TridiagonalMatrix<Double> changeBasis(Matrix<Double> matrix, Double[] y1) {
         int dim = 0;
         Double[] a = new Double[y1.length];
-        Double[] b = new Double[y1.length - 1];
-        Double[] y2;
+        Double[] b = new Double[y1.length];
+        b[0] = 0d;
+        Double[] y0 = getVectorDefBasis(-1, y1.length);
         Double[] temp;
         try {
-            temp = UtilsVector.toZeros(UtilsVector.multiplyToMatrix(matrix, y1), 10E-15);
-            a[0] = UtilsVector.multiply(y1, temp);
-            dim++;
-            temp = UtilsVector.toZeros(UtilsVector.subtract(temp, UtilsVector.multiplyToValue(y1, a[0])), 10E-15);
-            b[0] = UtilsVector.getSecondNorm(temp);
-            if (b[0] - 10E-15 <= 0)
-                throw new IndexOutOfBoundsException("b is zero");
-            y2 = UtilsVector.toZeros(UtilsVector.multiplyToValue(temp, 1.0 / b[0]), 10E-15);
-
-            for (int i = 1; i < y1.length - 1; i++) {
-                temp = UtilsVector.toZeros(UtilsVector.multiplyToMatrix(matrix, y2), 10E-15);
-                a[i] = UtilsVector.multiply(y2, temp);
+            for (int i = 0; i < y1.length - 1; i++) {
+                temp = UtilsVector.toZeros(UtilsVector.multiplyToMatrix(matrix, y1), 10E-15);
+                a[i] = UtilsVector.multiply(y1, temp);
                 dim++;
-                temp = UtilsVector.toZeros(UtilsVector.subtract(temp, UtilsVector.add(UtilsVector.multiplyToValue(y1, b[i - 1]), UtilsVector.multiplyToValue(y2, a[i]))), 10E-15);
-                b[i] = UtilsVector.getSecondNorm(temp);
-                if (b[i] - 10E-15 <= 0)
+                if (a[i].isNaN()) {
+                    throw new IndexOutOfBoundsException("a is NaN");
+                }
+                temp = UtilsVector.toZeros(UtilsVector.subtract(UtilsVector.subtract(temp, UtilsVector.multiplyToValue(y1, a[i])), UtilsVector.multiplyToValue(y0, b[i])), 10E-15);
+                b[i + 1] = UtilsVector.getSecondNorm(temp);
+                if (b[i + 1] - 10E-15 <= 0)
                     throw new IndexOutOfBoundsException("b is zero");
-                y1 = y2;
-                y2 = UtilsVector.toZeros(UtilsVector.multiplyToValue(temp, 1.0 / b[i]), 10E-15);
+                y0 = y1;
+                y1 = UtilsVector.toZeros(UtilsVector.multiplyToValue(temp, 1.0 / b[i + 1]), 10E-15);
             }
-            a[y1.length - 1] = UtilsVector.multiply(y2, UtilsVector.multiplyToMatrix(matrix, y2));
+            a[y1.length - 1] = UtilsVector.multiply(y1, UtilsVector.multiplyToMatrix(matrix, y1));
+            dim++;
         } catch (IndexOutOfBoundsException e) {
             System.out.printf("Chain break on i = %d\n", dim);
             a = Arrays.copyOfRange(a, 0, dim);
-            b = Arrays.copyOfRange(b, 0, dim - 1);
+        }
+        try {
+            b = Arrays.copyOfRange(b, 1, dim);
+        } catch (IllegalArgumentException ex) {
+            return null;
         }
         return new TridiagonalMatrix<>(a, b);
     }
@@ -112,7 +112,9 @@ public class CalcGijDouble implements Callable<Gij>{
         for (int j = 0; j < vect.length; j++) {
             vect[j] = 0.0;
         }
-        vect[i] = 1.0;
+        if (i >= 0) {
+            vect[i] = 1.0;
+        }
         return vect;
     }
 

@@ -1,5 +1,6 @@
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -125,15 +126,15 @@ public class UtilsVector {
         for (BigDecimal aVect : vect) {
             ans = ans.add(aVect.multiply(aVect, mathContext), mathContext);
         }
-        return new BigDecimal(Math.sqrt(ans.doubleValue()));
+        return bigSqrt(ans);
     }
 
     public static Complex getSecondNorm(Complex[] vect) {
-        double ans = 0;
+        Complex ans = Complex.ZERO;
         for (Complex aVect : vect) {
-            ans += aVect.doubleValue() * aVect.doubleValue();
+            ans = ans.add(aVect.multiply(aVect));
         }
-        return new Complex(Math.sqrt(ans), 0);
+        return new Complex(bigSqrt(ans.getImage() == 0d ? ans.getRealBig() : ans.bigValue()), BigDecimal.ZERO);
     }
 
     public static double[] multiplyToValue(double[] a, double val) {
@@ -225,11 +226,29 @@ public class UtilsVector {
         return ans;
     }
 
+    public static BigDecimal[] multiplyToMatrix(CheatMatrix<BigDecimal> matrix, BigDecimal[] v) {
+        BigDecimal[] ans = new BigDecimal[v.length];
+        for (int i = 0; i < matrix.getDimensional(); i++) {
+            ans[i] = BigDecimal.ZERO;
+            List<BigDecimal> row = matrix.getRow(i);
+            List<Integer> pos = matrix.getPositions(i);
+            for (int j = 0; j < pos.size(); j++) {
+                ans[i] = ans[i].add(row.get(j).multiply(v[pos.get(j)]));
+            }
+        }
+        return ans;
+    }
+
     public static <T extends Number> T[] multiplyToMatrix(CheatMatrix<T> matrix, T[] v) {
         if (v instanceof Complex[]) {
             CheatMatrix<Complex> complexCheatMatrix = (CheatMatrix<Complex>) matrix;
             Complex[] complexV = (Complex[]) v;
             return (T[]) multiplyToMatrix(complexCheatMatrix, complexV);
+        }
+        if (v instanceof BigDecimal[]) {
+            CheatMatrix<BigDecimal> decimalCheatMatrix = (CheatMatrix<BigDecimal>) matrix;
+            BigDecimal[] decimals = (BigDecimal[]) v;
+            return (T[]) multiplyToMatrix(decimalCheatMatrix, decimals);
         }
         Double[] ans = new Double[v.length];
         for (int i = 0; i < v.length; i++) {
@@ -317,7 +336,7 @@ public class UtilsVector {
             List<BigDecimal> row = matrix.getRow(i);
             List<Integer> pos = matrix.getPositions(i);
             for (int j = 0; j < pos.size(); j++) {
-                ans[i] = ans[i].add(row.get(j).multiply(v[pos.get(j)]));
+                ans[i] = ans[i].add(row.get(j).multiply(v[pos.get(j)], context), context);
             }
         }
         return ans;
@@ -406,5 +425,38 @@ public class UtilsVector {
             }
         }
         return vect;
+    }
+
+    private static final BigDecimal SQRT_DIG = new BigDecimal(500);
+    private static final BigDecimal SQRT_PRE = new BigDecimal(10).pow(SQRT_DIG.intValue());
+
+    /**
+     * Private utility method used to compute the square root of a BigDecimal.
+     *
+     * @author Luciano Culacciatti
+     * @url http://www.codeproject.com/Tips/257031/Implementing-SqrtRoot-in-BigDecimal
+     */
+    private static BigDecimal sqrtNewtonRaphson  (BigDecimal c, BigDecimal xn, BigDecimal precision){
+        BigDecimal fx = xn.pow(2).add(c.negate());
+        BigDecimal fpx = xn.multiply(new BigDecimal(2));
+        BigDecimal xn1 = fx.divide(fpx,2*SQRT_DIG.intValue(), RoundingMode.HALF_DOWN);
+        xn1 = xn.add(xn1.negate());
+        BigDecimal currentSquare = xn1.pow(2);
+        BigDecimal currentPrecision = currentSquare.subtract(c);
+        currentPrecision = currentPrecision.abs();
+        if (currentPrecision.compareTo(precision) <= -1){
+            return xn1;
+        }
+        return sqrtNewtonRaphson(c, xn1, precision);
+    }
+
+    /**
+     * Uses Newton Raphson to compute the square root of a BigDecimal.
+     *
+     * @author Luciano Culacciatti
+     * @url http://www.codeproject.com/Tips/257031/Implementing-SqrtRoot-in-BigDecimal
+     */
+    public static BigDecimal bigSqrt(BigDecimal c){
+        return sqrtNewtonRaphson(c,new BigDecimal(1),new BigDecimal(1).divide(SQRT_PRE));
     }
 }

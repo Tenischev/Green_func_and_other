@@ -1,8 +1,7 @@
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -40,9 +39,14 @@ public class CalcGijComplex implements Callable<CalcGijComplex.GijComplex>{
         Complex[] xi = getVectorDefBasis(i1, dimension);
         Complex[] xj = getVectorDefBasis(j1, dimension);
         Complex[] temp = UtilsVector.add(xi, xj);
-        Complex[] y1_0 = UtilsVector.multiplyToValue(temp, UtilsVector.getSecondNorm(temp).revert());
+        Complex[] y1_0 = UtilsVector.multiplyToValue(temp, UtilsVector.getSecondNorm(temp).revert(eps));
         temp = UtilsVector.subtract(xi, xj);
-        Complex[] y1_1 = UtilsVector.multiplyToValue(temp, UtilsVector.getSecondNorm(temp).revert());
+        Complex[] y1_1;
+        try {
+            y1_1 = UtilsVector.multiplyToValue(temp, UtilsVector.getSecondNorm(temp).revert(eps));
+        } catch (ArithmeticException e) {
+            y1_1 = UtilsVector.multiplyToValue(temp, Complex.ZERO);
+        }
         TridiagonalMatrix<Complex> h0 = changeBasis(matrix, y1_0);
         TridiagonalMatrix<Complex> h1 = changeBasis(matrix, y1_1);
         /*System.out.println("H0:");
@@ -59,30 +63,37 @@ public class CalcGijComplex implements Callable<CalcGijComplex.GijComplex>{
         Complex[] b = new Complex[y1.length - 1];
         Complex[] y2;
         Complex[] temp;
+        List<Complex[]> basis = new ArrayList<>();
+        basis.add(y1);
         try {
-            temp = UtilsVector.toZeros(UtilsVector.multiplyToMatrix(matrix, y1), 10E-15);
+            temp = UtilsVector.multiplyToMatrix(matrix, y1);
             a[0] = UtilsVector.multiply(y1, temp);
             if (a[0].isNaN())
                 throw new IndexOutOfBoundsException("a is nan");
             dim++;
-            temp = UtilsVector.toZeros(UtilsVector.subtract(temp, UtilsVector.multiplyToValue(y1, a[0])), 10E-15);
+            temp = UtilsVector.subtract(temp, UtilsVector.multiplyToValue(y1, a[0]));
             b[0] = UtilsVector.getSecondNorm(temp);
-            if (b[0].doubleValue() - 10E-15 <= 0 || b[0].isNaN())
+            if (b[0].isNaN())
                 throw new IndexOutOfBoundsException("b is zero");
-            y2 = UtilsVector.toZeros(UtilsVector.multiplyToValue(temp, b[0].revert()), 10E-15);
-
+            y2 = UtilsVector.multiplyToValue(temp, b[0].revert(eps));
+            //checkBasis(basis, y2);
+            basis.add(y2);
             for (int i = 1; i < y1.length - 1; i++) {
-                temp = UtilsVector.toZeros(UtilsVector.multiplyToMatrix(matrix, y2), 10E-15);
+                System.out.println("Start calculate " + i + " basis vector");
+                temp = UtilsVector.multiplyToMatrix(matrix, y2);
                 a[i] = UtilsVector.multiply(y2, temp);
                 dim++;
-                temp = UtilsVector.toZeros(UtilsVector.subtract(temp, UtilsVector.add(UtilsVector.multiplyToValue(y1, b[i - 1]), UtilsVector.multiplyToValue(y2, a[i]))), 10E-15);
+                temp = UtilsVector.subtract(temp, UtilsVector.add(UtilsVector.multiplyToValue(y1, b[i - 1]), UtilsVector.multiplyToValue(y2, a[i])));
                 b[i] = UtilsVector.getSecondNorm(temp);
-                if (b[i].doubleValue() - 10E-15 <= 0 || b[i].isNaN())
+                if (b[i].isNaN())
                     throw new IndexOutOfBoundsException("b is zero");
                 y1 = y2;
-                y2 = UtilsVector.toZeros(UtilsVector.multiplyToValue(temp, b[i].revert()), 10E-15);
+                y2 = UtilsVector.multiplyToValue(temp, b[i].revert(eps));
+                //checkBasis(basis, y2);
+                basis.add(y2);
             }
             a[y1.length - 1] = UtilsVector.multiply(y2, UtilsVector.multiplyToMatrix(matrix, y2));
+            checkBasis(basis, basis.get(basis.size() - 1));
         } catch (IndexOutOfBoundsException e) {
             //System.out.printf("Chain break on i = %d\n", dim);
             try {
@@ -94,6 +105,15 @@ public class CalcGijComplex implements Callable<CalcGijComplex.GijComplex>{
         }
         //System.out.println("Min of V " + Arrays.stream(b).min((o1, o2) -> Double.compare(o1.doubleValue(), o2.doubleValue())).get().doubleValue());
         return new TridiagonalMatrix<>(a, b);
+    }
+
+    private void checkBasis(List<Complex[]> basis, Complex[] y2) {
+        for (Complex[] v : basis) {
+            Complex s  = UtilsVector.multiply(v, y2);
+            if (s.doubleValue() > 1e-8) {
+                System.out.println("WARNING! Vectors not orthonormal on step " + basis.size());
+            }
+        }
     }
 
     private Complex[] getVectorDefBasis(int i, int dimmension) {
@@ -114,7 +134,7 @@ public class CalcGijComplex implements Callable<CalcGijComplex.GijComplex>{
             r2 = h1;
         }
 
-        public Complex getReal(Complex w) {
+        public Complex getValue(Complex w) {
             Complex v1 = substitute(w, r1);
             Complex v2 = substitute(w, r2);
             if (r1 != null && r2 != null) {
@@ -132,10 +152,10 @@ public class CalcGijComplex implements Callable<CalcGijComplex.GijComplex>{
             int i = b.length - 1;
             Complex ans = w.subtract(a[i + 1]);
             while (i >= 0) {
-                ans = w.subtract(a[i]).subtract(b[i].multiply(b[i]).multiply(ans.revert()));
+                ans = w.subtract(a[i]).subtract(b[i].multiply(b[i]).multiply(ans.revert(eps)));
                 i--;
             }
-            return ans.revert();
+            return ans.revert(eps);
         }
     }
 }

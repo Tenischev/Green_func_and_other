@@ -80,7 +80,7 @@ public class Gij {
     public Complex getValue(Complex w) {
         Complex ans = Complex.ZERO;
         for (int i = 0; i < c.length; i++) {
-            ans = ans.add((new Complex(c[i].doubleValue(), 0)).multiply(w.subtract(new Complex(x[i].doubleValue(), 0)).revert()));
+            ans = ans.add((new Complex(c[i].doubleValue(), 0)).multiply(w.subtract(new Complex(x[i].doubleValue(), 0)).revert(eps)));
         }
         return ans;
     }
